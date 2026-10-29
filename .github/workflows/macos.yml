@@ -13,12 +13,11 @@ on:
 jobs:
   build:
     name: Build
-    # install-qt-action在arm上执行macdeployqt会报parse otool错误，所以在intel mac上执行:
-    # 用qt6时在arm mac上编译arm和intel都没有问题
-    # qt5+intel mac编译intel没问题
-    # qt5+arm mac编译intel会报错
+    # Qt 5's macdeployqt cannot deploy an x86_64 app reliably from an arm64
+    # runner: its otool invocation fails and produces a package without Qt.
+    # Build Qt 5/x64 on a native Intel runner; build Qt 6/arm64 natively.
     # https://github.com/actions/runner-images?tab=readme-ov-file#available-images
-    runs-on: macos-13
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
         qt-ver: [5.15.2, 6.5.3]        
@@ -27,9 +26,11 @@ jobs:
           - qt-ver: 5.15.2
             qt-arch-install: clang_64
             build-arch: x64
+            runs-on: macos-15-intel
           - qt-ver: 6.5.3
             qt-arch-install: arm64
             build-arch: arm64
+            runs-on: macos-14
     env:
       target-name: QtScrcpy
       qt-install-path: ${{ github.workspace }}/${{ matrix.qt-ver }}
